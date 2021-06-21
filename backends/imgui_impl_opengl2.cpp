@@ -5,7 +5,8 @@
 //  [X] Renderer: User texture binding. Use 'GLuint' OpenGL texture identifier as void*/ImTextureID. Read the FAQ about ImTextureID!
 //  [X] Renderer: Multi-viewport support. Enable with 'io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable'.
 
-// You can copy and use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this. 
+// Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
@@ -19,7 +20,8 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2020-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2021-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2021-05-19: OpenGL: Replaced direct access to ImDrawCmd::TextureId with a call to ImDrawCmd::GetTexID(). (will become a requirement)
 //  2021-01-03: OpenGL: Backup, setup and restore GL_SHADE_MODEL state, disable GL_STENCIL_TEST and disable GL_NORMAL_ARRAY client state to increase compatibility with legacy OpenGL applications.
 //  2020-01-23: OpenGL: Backup, setup and restore GL_TEXTURE_ENV to increase compatibility with legacy OpenGL applications.
 //  2019-04-30: OpenGL: Added support for special ImDrawCallback_ResetRenderState callback to reset render state.
@@ -92,6 +94,7 @@ static void ImGui_ImplOpenGL2_SetupRenderState(ImDrawData* draw_data, int fb_wid
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers, polygon fill.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // In order to composite our output buffer we need to preserve alpha
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
@@ -194,7 +197,7 @@ void ImGui_ImplOpenGL2_RenderDrawData(ImDrawData* draw_data)
                     glScissor((int)clip_rect.x, (int)(fb_height - clip_rect.w), (int)(clip_rect.z - clip_rect.x), (int)(clip_rect.w - clip_rect.y));
 
                     // Bind texture, Draw
-                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
+                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
                     glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer);
                 }
             }
@@ -238,7 +241,7 @@ bool ImGui_ImplOpenGL2_CreateFontsTexture()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     // Store our identifier
-    io.Fonts->TexID = (ImTextureID)(intptr_t)g_FontTexture;
+    io.Fonts->SetTexID((ImTextureID)(intptr_t)g_FontTexture);
 
     // Restore state
     glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -252,7 +255,7 @@ void ImGui_ImplOpenGL2_DestroyFontsTexture()
     {
         ImGuiIO& io = ImGui::GetIO();
         glDeleteTextures(1, &g_FontTexture);
-        io.Fonts->TexID = 0;
+        io.Fonts->SetTexID(0);
         g_FontTexture = 0;
     }
 }
