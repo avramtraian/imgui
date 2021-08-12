@@ -2,8 +2,8 @@ project "ImGui"
 	kind "StaticLib"
 	language "C++"
 
-	targetdir ("Engine/Binaries/Win64")
-	objdir ("Engine/Intermediate/Win64")
+	targetdir ("../../Engine/Binaries/Win64")
+	objdir ("../../Engine/Intermediate/Win64")
 
 	files
 	{
@@ -26,12 +26,6 @@ project "ImGui"
 	}
 
 	filter "system:windows"
-		systemversion "latest"
-		cppdialect "C++17"
-		staticruntime "On"
-
-	filter "system:linux"
-		pic "On"
 		systemversion "latest"
 		cppdialect "C++17"
 		staticruntime "On"
